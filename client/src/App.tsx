@@ -2,6 +2,7 @@ import { Route, Router } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Portfolio from "./pages/Portfolio";
 import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 // Create a client
@@ -20,6 +21,7 @@ function App() {
       <Router>
         <Route path="/" component={Portfolio} />
         <Route path="/admin/login" component={AdminLogin} />
+        <Route path="/admin" component={AdminDashboard} />
         <Route component={NotFound} />
       </Router>
     </QueryClientProvider>

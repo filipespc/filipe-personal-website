@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 
 interface SetupData {
   username: string;
@@ -42,6 +43,7 @@ async function loginAdmin(data: LoginData) {
 }
 
 export default function AdminLogin() {
+  const [, setLocation] = useLocation();
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -62,8 +64,7 @@ export default function AdminLogin() {
   const loginMutation = useMutation({
     mutationFn: loginAdmin,
     onSuccess: () => {
-      alert("Login successful!");
-      // Here you would typically redirect to admin dashboard
+      setLocation("/admin");
     },
     onError: (error: Error) => {
       alert(error.message);
