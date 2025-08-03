@@ -20,8 +20,9 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Use HTTPS in production
+      secure: false, // Temporarily disable for Railway troubleshooting
       maxAge: sessionTtl,
+      sameSite: 'lax',
     },
   });
 }

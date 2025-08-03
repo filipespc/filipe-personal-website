@@ -45,6 +45,7 @@ app.post("/api/admin/login", async (req, res) => {
     }
 
     (req.session as any).adminId = adminUser.id;
+    console.log("Login successful - setting session adminId:", adminUser.id);
     res.json({ message: "Login successful", user: { id: adminUser.id, username: adminUser.username } });
   } catch (error) {
     console.error("Login error:", error);
@@ -64,8 +65,10 @@ app.post("/api/admin/logout", (req, res) => {
 app.get("/api/admin/me", requireAuth, async (req, res) => {
   try {
     const adminId = (req.session as any).adminId;
+    console.log("Admin me request - adminId:", adminId, "session:", req.session);
     const adminUser = await storage.getAdminUser(adminId);
     if (!adminUser) {
+      console.log("Admin user not found for ID:", adminId);
       return res.status(401).json({ message: "User not found" });
     }
     res.json({ id: adminUser.id, username: adminUser.username });
