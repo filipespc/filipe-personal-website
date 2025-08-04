@@ -130,6 +130,39 @@ app.put("/api/admin/profile", requireAuth, async (req, res) => {
   }
 });
 
+// Experiences routes
+app.get("/api/experiences", async (req, res) => {
+  try {
+    const experiences = await storage.getAllExperiences();
+    res.json(experiences);
+  } catch (error) {
+    console.error("Get experiences error:", error);
+    res.status(500).json({ message: "Failed to fetch experiences" });
+  }
+});
+
+// Education routes
+app.get("/api/education", async (req, res) => {
+  try {
+    const education = await storage.getAllEducation();
+    res.json(education);
+  } catch (error) {
+    console.error("Get education error:", error);
+    res.status(500).json({ message: "Failed to fetch education" });
+  }
+});
+
+// Case studies routes
+app.get("/api/case-studies", async (req, res) => {
+  try {
+    const caseStudies = await storage.getAllCaseStudies();
+    res.json(caseStudies);
+  } catch (error) {
+    console.error("Get case studies error:", error);
+    res.status(500).json({ message: "Failed to fetch case studies" });
+  }
+});
+
 // API routes placeholder
 app.get("/api/test", (req, res) => {
   res.json({ message: "API is working!" });
