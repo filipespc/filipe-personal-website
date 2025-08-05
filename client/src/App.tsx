@@ -4,6 +4,7 @@ import Portfolio from "./pages/Portfolio";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import { Toaster } from "./components/ui/toaster";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -24,6 +25,7 @@ function App() {
         <Route path="/admin" component={AdminDashboard} />
         <Route component={NotFound} />
       </Router>
+      <Toaster />
     </QueryClientProvider>
   );
 }
