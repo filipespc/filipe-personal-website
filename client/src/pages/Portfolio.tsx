@@ -57,7 +57,7 @@ function parseTools(tools: any[]): { name: string; usage?: string }[] {
   });
 }
 
-function formatDateRange(startDate: string, endDate?: string, isCurrentJob?: boolean): string {
+function formatDateRange(startDate: string, endDate?: string | null, isCurrentJob?: boolean): string {
   const start = new Date(startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   if (isCurrentJob) return `${start} - Present`;
   if (!endDate) return start;
@@ -70,7 +70,10 @@ export default function Portfolio() {
   const [experienceViewMode, setExperienceViewMode] = useState<ExperienceViewMode>('all');
   const { toast } = useToast();
 
-  // Profile query moved to HeroSection component
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: fetchProfile,
+  });
 
   const { data: experiences = [], isLoading: experiencesLoading } = useQuery({
     queryKey: ["experiences"],
@@ -119,7 +122,7 @@ export default function Portfolio() {
     
     if (savedOrder.length > 0) {
       const orderedTools = savedOrder
-        .map(toolName => toolsArray.find(([name]) => name === toolName))
+        .map((toolName: string) => toolsArray.find(([name]) => name === toolName))
         .filter((item): item is [string, { experiences: Experience[], usage: Map<string, string> }] => item !== undefined);
       
       const remainingTools = toolsArray.filter(([name]) => !savedOrder.includes(name));
@@ -135,7 +138,7 @@ export default function Portfolio() {
     
     if (savedOrder.length > 0) {
       const orderedIndustries = savedOrder
-        .map(industryName => industriesArray.find(([name]) => name === industryName))
+        .map((industryName: string) => industriesArray.find(([name]) => name === industryName))
         .filter((item): item is [string, Experience[]] => item !== undefined);
       
       const remainingIndustries = industriesArray.filter(([name]) => !savedOrder.includes(name));
@@ -225,7 +228,7 @@ export default function Portfolio() {
           </div>
           
           <div className="space-y-4">
-            {toolExperiences.map(exp => (
+            {toolExperiences.map((exp: Experience) => (
               <div key={exp.id} className="border-l-4 border-sollo-gold pl-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
@@ -263,7 +266,7 @@ export default function Portfolio() {
           </div>
           
           <div className="space-y-6">
-            {industryExperiences.map(exp => (
+            {industryExperiences.map((exp: Experience) => (
               <div key={exp.id} className="border-l-4 border-sollo-red pl-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
@@ -277,7 +280,7 @@ export default function Portfolio() {
                 
                 <div className="mt-3">
                   <FormattedText 
-                    text={exp.accomplishments} 
+                    text={exp.accomplishments || ''} 
                     className="text-gray-700 leading-relaxed text-sm" 
                   />
                 </div>

@@ -26,7 +26,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Auth routes
+// Admin authentication endpoints
 app.post("/api/admin/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -34,19 +34,26 @@ app.post("/api/admin/login", async (req, res) => {
       return res.status(400).json({ message: "Username and password required" });
     }
 
+    // Get admin user from database
     const adminUser = await storage.getAdminUserByUsername(username);
     if (!adminUser) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // Verify password against hash
     const isValid = await verifyPassword(password, adminUser.password);
     if (!isValid) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    (req.session as any).adminId = adminUser.id;
-    console.log("Login successful - setting session adminId:", adminUser.id);
-    res.json({ message: "Login successful", user: { id: adminUser.id, username: adminUser.username } });
+    // Create session
+    req.session.userId = adminUser.id;
+    req.session.username = adminUser.username;
+    
+    res.json({ 
+      id: adminUser.id, 
+      username: adminUser.username 
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Login failed" });
@@ -56,51 +63,36 @@ app.post("/api/admin/login", async (req, res) => {
 app.post("/api/admin/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
+      console.error("Logout error:", err);
       return res.status(500).json({ message: "Logout failed" });
     }
-    res.json({ message: "Logout successful" });
+    res.clearCookie('connect.sid');
+    res.json({ message: "Logged out successfully" });
   });
 });
 
-app.get("/api/admin/me", requireAuth, async (req, res) => {
+app.get("/api/admin/me", async (req, res) => {
   try {
-    const adminId = (req.session as any).adminId;
-    console.log("Admin me request - adminId:", adminId, "session:", req.session);
-    const adminUser = await storage.getAdminUser(adminId);
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const adminUser = await storage.getAdminUser(req.session.userId);
     if (!adminUser) {
-      console.log("Admin user not found for ID:", adminId);
       return res.status(401).json({ message: "User not found" });
     }
-    res.json({ id: adminUser.id, username: adminUser.username });
+    
+    res.json({
+      id: adminUser.id,
+      username: adminUser.username
+    });
   } catch (error) {
     console.error("Get user error:", error);
     res.status(500).json({ message: "Failed to fetch user" });
   }
 });
 
-// Create initial admin user (for setup)
-app.post("/api/admin/setup", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ message: "Username and password required" });
-    }
-
-    // Check if admin already exists
-    const existingAdmin = await storage.getAdminUserByUsername(username);
-    if (existingAdmin) {
-      return res.status(400).json({ message: "Admin user already exists" });
-    }
-
-    const hashedPassword = await hashPassword(password);
-    const adminUser = await storage.createAdminUser({ username, password: hashedPassword });
-    
-    res.json({ message: "Admin user created successfully", user: { id: adminUser.id, username: adminUser.username } });
-  } catch (error) {
-    console.error("Setup error:", error);
-    res.status(500).json({ message: "Failed to create admin user" });
-  }
-});
+// Setup endpoint removed - using fixed credentials now
 
 // Profile routes
 app.get("/api/profile", async (req, res) => {
@@ -138,6 +130,69 @@ app.get("/api/experiences", async (req, res) => {
   } catch (error) {
     console.error("Get experiences error:", error);
     res.status(500).json({ message: "Failed to fetch experiences" });
+  }
+});
+
+// Admin experience management endpoints
+app.get("/api/admin/experiences", requireAuth, async (req, res) => {
+  try {
+    const experiences = await storage.getAllExperiences();
+    res.json(experiences);
+  } catch (error) {
+    console.error("Get admin experiences error:", error);
+    res.status(500).json({ message: "Failed to fetch experiences" });
+  }
+});
+
+app.post("/api/admin/experiences", requireAuth, async (req, res) => {
+  try {
+    const validatedData = insertExperienceSchema.parse(req.body);
+    const experience = await storage.createExperience(validatedData);
+    res.status(201).json(experience);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        message: "Validation error", 
+        errors: error.errors 
+      });
+    }
+    console.error("Create experience error:", error);
+    res.status(500).json({ message: "Failed to create experience" });
+  }
+});
+
+app.put("/api/admin/experiences/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const validatedData = insertExperienceSchema.parse(req.body);
+    const experience = await storage.updateExperience(id, validatedData);
+    if (!experience) {
+      return res.status(404).json({ message: "Experience not found" });
+    }
+    res.json(experience);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        message: "Validation error", 
+        errors: error.errors 
+      });
+    }
+    console.error("Update experience error:", error);
+    res.status(500).json({ message: "Failed to update experience" });
+  }
+});
+
+app.delete("/api/admin/experiences/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteExperience(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Experience not found" });
+    }
+    res.json({ message: "Experience deleted successfully" });
+  } catch (error) {
+    console.error("Delete experience error:", error);
+    res.status(500).json({ message: "Failed to delete experience" });
   }
 });
 

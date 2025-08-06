@@ -28,7 +28,7 @@ export function getSession() {
 }
 
 export const requireAuth: RequestHandler = (req, res, next) => {
-  if (req.session && (req.session as any).adminId) {
+  if (req.session && req.session.userId) {
     return next();
   }
   res.status(401).json({ message: 'Authentication required' });

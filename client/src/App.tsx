@@ -5,6 +5,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "./components/ui/toaster";
+import { AuthProvider } from "./hooks/useAuth";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -19,13 +20,15 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <Route path="/" component={Portfolio} />
-        <Route path="/admin/login" component={AdminLogin} />
-        <Route path="/admin" component={AdminDashboard} />
-        <Route component={NotFound} />
-      </Router>
-      <Toaster />
+      <AuthProvider>
+        <Router>
+          <Route path="/" component={Portfolio} />
+          <Route path="/admin/login" component={AdminLogin} />
+          <Route path="/admin" component={AdminDashboard} />
+          <Route component={NotFound} />
+        </Router>
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
