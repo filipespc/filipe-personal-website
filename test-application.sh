@@ -6,6 +6,11 @@
 
 set -e
 
+# Load environment variables from .env file
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -166,16 +171,13 @@ test_admin_functionality() {
         return 1
     fi
     
-    # Extract admin credentials from the init script output
-    local admin_output
-    admin_output=$(node init-admin.js 2>/dev/null | tail -4)
-    local username
-    local password
-    username=$(echo "$admin_output" | grep "Username:" | awk '{print $2}')
-    password=$(echo "$admin_output" | grep "Password:" | awk '{print $2}')
+    # Get admin credentials from environment variables
+    local username="${ADMIN_USERNAME:-filipe}"
+    local password="${ADMIN_PASSWORD:-}"
     
-    if [ -z "$username" ] || [ -z "$password" ]; then
-        test_result 1 "Failed to extract admin credentials"
+    if [ -z "$password" ]; then
+        test_result 1 "ADMIN_PASSWORD environment variable not set"
+        echo -e "   ${YELLOW}💡 Please ensure ADMIN_PASSWORD is set in your .env file${NC}"
         return 1
     fi
     

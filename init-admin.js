@@ -21,8 +21,9 @@ async function initializeAdmin() {
   try {
     console.log("🔧 Initializing admin user...");
     
-    const username = "filipe";
-    const password = "af52c1b8c4fdda3d33d1c5cd6ba05570";
+    // Get credentials from environment variables or use defaults
+    const username = process.env.ADMIN_USERNAME || "filipe";
+    const password = process.env.ADMIN_PASSWORD || randomUUID();
     const hashedPassword = await bcrypt.hash(password, 10);
     
     // Check if admin user already exists
@@ -55,8 +56,8 @@ async function initializeAdmin() {
     }
     
     console.log("🔐 Admin credentials:");
-    console.log("   Username: filipe");
-    console.log("   Password: af52c1b8c4fdda3d33d1c5cd6ba05570");
+    console.log(`   Username: ${username}`);
+    console.log(`   Password: ${password}`);
     console.log("   Hash:", hashedPassword);
     
   } catch (error) {
