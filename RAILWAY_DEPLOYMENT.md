@@ -3,7 +3,25 @@
 > **Platform**: Railway.app  
 > **Application**: filipe-personal-website (CareerCanvas Portfolio)  
 > **Database**: PostgreSQL (Railway-managed)  
-> **File Storage**: Cloudinary CDN
+> **File Storage**: Cloudinary CDN  
+> **Status**: ✅ **DEPLOYED AND RUNNING**
+
+## 🌐 **Current Production Deployment**
+
+**🚀 Live Application:** https://ideal-imagination-production.up.railway.app  
+**🗄️ Database:** PostgreSQL (Railway-managed, connected)  
+**⚙️ Environment:** production  
+**🔧 Service Name:** ideal-imagination  
+
+**✅ Configured Environment Variables:**
+- `NODE_ENV=production`
+- `PORT=3000` (Railway auto-assigned)
+- `DATABASE_URL` (Railway auto-provided PostgreSQL)
+- `SESSION_SECRET` (configured for production)
+- `ADMIN_USERNAME=filipe` 
+- `ADMIN_PASSWORD` (secure production password set)
+
+**🎯 Admin Access:** https://ideal-imagination-production.up.railway.app/admin/login
 
 ## 🚂 Railway Configuration
 
@@ -81,16 +99,11 @@ DB_IDLE_TIMEOUT=30000
 
 ## 🗄️ Database Setup
 
-### Railway PostgreSQL Service
-1. **Add PostgreSQL Service**:
-   ```bash
-   # In Railway dashboard:
-   # 1. Go to your project
-   # 2. Click "Add Service" → "Database" → "PostgreSQL"
-   # 3. Railway automatically provisions and connects the database
-   ```
-
-2. **Database URL**: Railway automatically provides `DATABASE_URL` environment variable
+### ✅ Railway PostgreSQL Service (COMPLETED)
+**Status:** Database is provisioned and connected
+- **Connection:** `postgresql://postgres:***@postgres.railway.internal:5432/railway`
+- **Access:** Via `DATABASE_URL` environment variable (auto-provided by Railway)
+- **Schema:** All tables created and populated with data
 
 ### Database Migration & Setup
 ```bash
@@ -194,12 +207,13 @@ CMD ["npm", "start"]
 # - CSRF protection (via session validation)
 ```
 
-### Production Security Checklist
-- [ ] Strong `SESSION_SECRET` (minimum 32 characters)
-- [ ] Database credentials secure (Railway manages this)
-- [ ] HTTPS enabled (Railway provides SSL certificates)
-- [ ] Environment variables properly configured
-- [ ] Session configuration secure
+### ✅ Production Security Checklist (COMPLETED)
+- [x] Strong `SESSION_SECRET` (configured in Railway)
+- [x] Database credentials secure (Railway manages this)
+- [x] HTTPS enabled (Railway provides SSL certificates)
+- [x] Environment variables properly configured
+- [x] Session configuration secure
+- [x] Admin credentials securely configured
 - [ ] File upload restrictions configured (when implemented)
 
 ## 📊 Monitoring & Logs
