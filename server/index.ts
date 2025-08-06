@@ -47,7 +47,7 @@ app.post("/api/admin/login", async (req, res) => {
     }
 
     // Create session
-    req.session.userId = adminUser.id;
+    req.session.userId = adminUser.id.toString();
     req.session.username = adminUser.username;
     
     res.json({ 
