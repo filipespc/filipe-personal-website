@@ -4,8 +4,9 @@ import { useRequireAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ExperienceModal from "@/components/experience-modal";
-import { Experience, Profile } from "@shared/schema";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import EducationModal from "@/components/education-modal";
+import { Experience, Profile, Education } from "@shared/schema";
+import { Plus, Edit, Trash2, ExternalLink } from "lucide-react";
 
 // API Functions
 async function fetchExperiences(): Promise<Experience[]> {
@@ -50,6 +51,43 @@ async function deleteExperience(id: number): Promise<void> {
   if (!response.ok) throw new Error("Failed to delete experience");
 }
 
+// Education API Functions
+async function fetchEducation(): Promise<Education[]> {
+  const response = await fetch("/api/admin/education", { credentials: 'include' });
+  if (!response.ok) throw new Error("Failed to fetch education");
+  return response.json();
+}
+
+async function createEducation(data: any): Promise<Education> {
+  const response = await fetch("/api/admin/education", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to create education");
+  return response.json();
+}
+
+async function updateEducation(id: number, data: any): Promise<Education> {
+  const response = await fetch(`/api/admin/education/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to update education");
+  return response.json();
+}
+
+async function deleteEducation(id: number): Promise<void> {
+  const response = await fetch(`/api/admin/education/${id}`, {
+    method: "DELETE",
+    credentials: 'include',
+  });
+  if (!response.ok) throw new Error("Failed to delete education");
+}
+
 export default function AdminDashboard() {
   const auth = useRequireAuth();
   const { toast } = useToast();
@@ -58,18 +96,28 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'profile' | 'experiences' | 'education' | 'case-studies'>('experiences');
   const [isExperienceModalOpen, setIsExperienceModalOpen] = useState(false);
   const [editingExperience, setEditingExperience] = useState<Experience | undefined>();
+  const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
+  const [editingEducation, setEditingEducation] = useState<Education | undefined>();
 
   // Queries
   const { data: experiences = [], isLoading: experiencesLoading } = useQuery({
     queryKey: ["admin-experiences"],
     queryFn: fetchExperiences,
     enabled: activeTab === 'experiences',
+    retry: 1,
   });
+
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
     queryFn: fetchProfile,
     enabled: activeTab === 'profile',
+  });
+
+  const { data: education = [], isLoading: educationLoading } = useQuery({
+    queryKey: ["admin-education"],
+    queryFn: fetchEducation,
+    enabled: activeTab === 'education',
   });
 
   // Mutations
@@ -97,6 +145,34 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ["admin-experiences"] });
       queryClient.invalidateQueries({ queryKey: ["experiences"] }); // Refresh public data
       toast({ title: "Success!", description: "Experience deleted successfully." });
+    },
+  });
+
+  // Education Mutations
+  const createEducationMutation = useMutation({
+    mutationFn: createEducation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-education"] });
+      queryClient.invalidateQueries({ queryKey: ["education"] }); // Refresh public data
+      toast({ title: "Success!", description: "Education created successfully." });
+    },
+  });
+
+  const updateEducationMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => updateEducation(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-education"] });
+      queryClient.invalidateQueries({ queryKey: ["education"] }); // Refresh public data
+      toast({ title: "Success!", description: "Education updated successfully." });
+    },
+  });
+
+  const deleteEducationMutation = useMutation({
+    mutationFn: deleteEducation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-education"] });
+      queryClient.invalidateQueries({ queryKey: ["education"] }); // Refresh public data
+      toast({ title: "Success!", description: "Education deleted successfully." });
     },
   });
 
@@ -129,6 +205,39 @@ export default function AdminDashboard() {
       await updateMutation.mutateAsync({ id: editingExperience.id, data });
     } else {
       await createMutation.mutateAsync(data);
+    }
+  };
+
+  // Education handlers
+  const handleCreateEducation = () => {
+    setEditingEducation(undefined);
+    setIsEducationModalOpen(true);
+  };
+
+  const handleEditEducation = (education: Education) => {
+    setEditingEducation(education);
+    setIsEducationModalOpen(true);
+  };
+
+  const handleDeleteEducation = async (education: Education) => {
+    if (window.confirm(`Are you sure you want to delete "${education.name}" education?`)) {
+      try {
+        await deleteEducationMutation.mutateAsync(education.id);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete education. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSaveEducation = async (data: any) => {
+    if (editingEducation) {
+      await updateEducationMutation.mutateAsync({ id: editingEducation.id, data });
+    } else {
+      await createEducationMutation.mutateAsync(data);
     }
   };
 
@@ -190,11 +299,10 @@ export default function AdminDashboard() {
             Manage Experiences
           </Button>
           <Button
-            variant={activeTab === 'education' ? 'outline' : 'outline'}
+            variant={activeTab === 'education' ? 'default' : 'outline'}
             onClick={() => setActiveTab('education')}
-            disabled
           >
-            Manage Education (Coming Soon)
+            Manage Education
           </Button>
           <Button
             variant={activeTab === 'case-studies' ? 'outline' : 'outline'}
@@ -292,8 +400,71 @@ export default function AdminDashboard() {
 
           {activeTab === 'education' && (
             <div>
-              <h2 className="font-baron text-xl tracking-wide mb-6">MANAGE EDUCATION</h2>
-              <p className="text-gray-600">Education management functionality coming soon...</p>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-baron text-xl tracking-wide">MANAGE EDUCATION</h2>
+                <Button onClick={handleCreateEducation}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Education
+                </Button>
+              </div>
+
+              {educationLoading ? (
+                <div>Loading education...</div>
+              ) : education.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-600 mb-4">No education entries yet.</p>
+                  <Button onClick={handleCreateEducation}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Your First Education
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {education.map((edu) => (
+                    <div key={edu.id} className="bg-white p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-baron text-lg tracking-wide mb-1">
+                            {edu.name.toUpperCase()}
+                          </h3>
+                          <p className="text-sollo-gold font-medium mb-1">{edu.category}</p>
+                          {edu.date && (
+                            <p className="text-sm text-gray-600 mb-2">{edu.date}</p>
+                          )}
+                          {edu.link && (
+                            <a 
+                              href={edu.link} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              View Certificate
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditEducation(edu)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteEducation(edu)}
+                            disabled={deleteEducationMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -313,6 +484,15 @@ export default function AdminDashboard() {
         onSave={handleSaveExperience}
         experience={editingExperience}
         title={editingExperience ? "Edit Experience" : "Add Experience"}
+      />
+
+      {/* Education Modal */}
+      <EducationModal
+        isOpen={isEducationModalOpen}
+        onClose={() => setIsEducationModalOpen(false)}
+        onSave={handleSaveEducation}
+        education={editingEducation}
+        title={editingEducation ? "Edit Education" : "Add Education"}
       />
     </div>
   );

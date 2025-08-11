@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,15 +36,16 @@ interface ExperienceModalProps {
 }
 
 const commonIndustries = [
+  "Banking",
+  "Big Data", 
+  "Fintech",
+  "Hardware",
+  "Legaltech",
   "Technology",
   "Healthcare",
-  "Finance",
   "Education",
-  "Retail",
-  "Manufacturing",
   "Consulting",
   "Marketing",
-  "Legal",
   "Other"
 ];
 
@@ -61,17 +62,46 @@ export default function ExperienceModal({
   const form = useForm<ExperienceFormData>({
     resolver: zodResolver(experienceSchema),
     defaultValues: {
-      jobTitle: experience?.jobTitle || "",
-      company: experience?.company || "",
-      industry: experience?.industry || "",
-      startDate: experience?.startDate || "",
-      endDate: experience?.endDate || "",
-      isCurrentJob: experience?.isCurrentJob || false,
-      description: experience?.description || "",
-      accomplishments: experience?.accomplishments || "",
-      tools: experience?.tools || [],
+      jobTitle: "",
+      company: "",
+      industry: "",
+      startDate: "",
+      endDate: "",
+      isCurrentJob: false,
+      description: "",
+      accomplishments: "",
+      tools: [],
     },
   });
+
+  // Reset form when experience prop changes
+  useEffect(() => {
+    if (experience) {
+      form.reset({
+        jobTitle: experience.jobTitle || "",
+        company: experience.company || "",
+        industry: experience.industry || "",
+        startDate: experience.startDate || "",
+        endDate: experience.endDate || "",
+        isCurrentJob: experience.isCurrentJob || false,
+        description: experience.description || "",
+        accomplishments: experience.accomplishments || "",
+        tools: experience.tools || [],
+      });
+    } else {
+      form.reset({
+        jobTitle: "",
+        company: "",
+        industry: "",
+        startDate: "",
+        endDate: "",
+        isCurrentJob: false,
+        description: "",
+        accomplishments: "",
+        tools: [],
+      });
+    }
+  }, [experience, form]);
 
   const isCurrentJob = form.watch("isCurrentJob");
 
@@ -154,20 +184,20 @@ export default function ExperienceModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Industry</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select industry" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {commonIndustries.map((industry) => (
-                        <SelectItem key={industry} value={industry}>
-                          {industry}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        placeholder="Type or select industry"
+                        list="industries-list"
+                        {...field}
+                      />
+                      <datalist id="industries-list">
+                        {commonIndustries.map((industry) => (
+                          <option key={industry} value={industry} />
+                        ))}
+                      </datalist>
+                    </div>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

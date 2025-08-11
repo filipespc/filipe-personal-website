@@ -207,6 +207,63 @@ app.get("/api/education", async (req, res) => {
   }
 });
 
+// Admin education management endpoints
+app.get("/api/admin/education", requireAuth, async (req, res) => {
+  try {
+    const education = await storage.getAllEducation();
+    res.json(education);
+  } catch (error) {
+    console.error("Get admin education error:", error);
+    res.status(500).json({ message: "Failed to fetch education" });
+  }
+});
+
+app.post("/api/admin/education", requireAuth, async (req, res) => {
+  try {
+    const validatedData = insertEducationSchema.parse(req.body);
+    const newEducation = await storage.createEducation(validatedData);
+    res.json(newEducation);
+  } catch (error) {
+    console.error("Create education error:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation error", errors: error.errors });
+    }
+    res.status(500).json({ message: "Failed to create education" });
+  }
+});
+
+app.put("/api/admin/education/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const validatedData = insertEducationSchema.partial().parse(req.body);
+    const updatedEducation = await storage.updateEducation(id, validatedData);
+    if (!updatedEducation) {
+      return res.status(404).json({ message: "Education not found" });
+    }
+    res.json(updatedEducation);
+  } catch (error) {
+    console.error("Update education error:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation error", errors: error.errors });
+    }
+    res.status(500).json({ message: "Failed to update education" });
+  }
+});
+
+app.delete("/api/admin/education/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteEducation(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Education not found" });
+    }
+    res.json({ message: "Education deleted successfully" });
+  } catch (error) {
+    console.error("Delete education error:", error);
+    res.status(500).json({ message: "Failed to delete education" });
+  }
+});
+
 // Case studies routes
 app.get("/api/case-studies", async (req, res) => {
   try {
