@@ -407,17 +407,6 @@ export default function Portfolio() {
       {/* Hero Section */}
       <HeroSection />
 
-      {/* Test Section - Remove after testing */}
-      <div className="max-w-6xl mx-auto px-6 py-8 text-center">
-        <Button 
-          onClick={() => toast({
-            title: "🎉 Components Working!",
-            description: "Button, Toast, and Hook system are all functional.",
-          })}
-        >
-          Test Components
-        </Button>
-      </div>
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-16">
