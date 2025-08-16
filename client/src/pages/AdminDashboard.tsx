@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ExperienceModal from "@/components/experience-modal";
 import EducationModal from "@/components/education-modal";
-import { Experience, Profile, Education } from "@shared/schema";
-import { Plus, Edit, Trash2, ExternalLink } from "lucide-react";
+import CaseStudyModal from "@/components/case-study-modal";
+import { Experience, Profile, Education, CaseStudy } from "@shared/schema";
+import { Plus, Edit, Trash2, ExternalLink, Eye, FileText } from "lucide-react";
 
 // API Functions
 async function fetchExperiences(): Promise<Experience[]> {
@@ -88,6 +89,43 @@ async function deleteEducation(id: number): Promise<void> {
   if (!response.ok) throw new Error("Failed to delete education");
 }
 
+// Case Study API Functions
+async function fetchCaseStudies(): Promise<CaseStudy[]> {
+  const response = await fetch("/api/admin/case-studies", { credentials: 'include' });
+  if (!response.ok) throw new Error("Failed to fetch case studies");
+  return response.json();
+}
+
+async function createCaseStudy(data: any): Promise<CaseStudy> {
+  const response = await fetch("/api/admin/case-studies", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to create case study");
+  return response.json();
+}
+
+async function updateCaseStudy(id: number, data: any): Promise<CaseStudy> {
+  const response = await fetch(`/api/admin/case-studies/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to update case study");
+  return response.json();
+}
+
+async function deleteCaseStudy(id: number): Promise<void> {
+  const response = await fetch(`/api/admin/case-studies/${id}`, {
+    method: "DELETE",
+    credentials: 'include',
+  });
+  if (!response.ok) throw new Error("Failed to delete case study");
+}
+
 export default function AdminDashboard() {
   const auth = useRequireAuth();
   const { toast } = useToast();
@@ -98,6 +136,8 @@ export default function AdminDashboard() {
   const [editingExperience, setEditingExperience] = useState<Experience | undefined>();
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
   const [editingEducation, setEditingEducation] = useState<Education | undefined>();
+  const [isCaseStudyModalOpen, setIsCaseStudyModalOpen] = useState(false);
+  const [editingCaseStudy, setEditingCaseStudy] = useState<CaseStudy | undefined>();
 
   // Queries
   const { data: experiences = [], isLoading: experiencesLoading } = useQuery({
@@ -118,6 +158,12 @@ export default function AdminDashboard() {
     queryKey: ["admin-education"],
     queryFn: fetchEducation,
     enabled: activeTab === 'education',
+  });
+
+  const { data: caseStudies = [], isLoading: caseStudiesLoading } = useQuery({
+    queryKey: ["admin-case-studies"],
+    queryFn: fetchCaseStudies,
+    enabled: activeTab === 'case-studies',
   });
 
   // Mutations
@@ -173,6 +219,34 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ["admin-education"] });
       queryClient.invalidateQueries({ queryKey: ["education"] }); // Refresh public data
       toast({ title: "Success!", description: "Education deleted successfully." });
+    },
+  });
+
+  // Case Study Mutations
+  const createCaseStudyMutation = useMutation({
+    mutationFn: createCaseStudy,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-case-studies"] });
+      queryClient.invalidateQueries({ queryKey: ["case-studies"] }); // Refresh public data
+      toast({ title: "Success!", description: "Case study created successfully." });
+    },
+  });
+
+  const updateCaseStudyMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => updateCaseStudy(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-case-studies"] });
+      queryClient.invalidateQueries({ queryKey: ["case-studies"] }); // Refresh public data
+      toast({ title: "Success!", description: "Case study updated successfully." });
+    },
+  });
+
+  const deleteCaseStudyMutation = useMutation({
+    mutationFn: deleteCaseStudy,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-case-studies"] });
+      queryClient.invalidateQueries({ queryKey: ["case-studies"] }); // Refresh public data
+      toast({ title: "Success!", description: "Case study deleted successfully." });
     },
   });
 
@@ -241,6 +315,39 @@ export default function AdminDashboard() {
     }
   };
 
+  // Case Study handlers
+  const handleCreateCaseStudy = () => {
+    setEditingCaseStudy(undefined);
+    setIsCaseStudyModalOpen(true);
+  };
+
+  const handleEditCaseStudy = (caseStudy: CaseStudy) => {
+    setEditingCaseStudy(caseStudy);
+    setIsCaseStudyModalOpen(true);
+  };
+
+  const handleDeleteCaseStudy = async (caseStudy: CaseStudy) => {
+    if (window.confirm(`Are you sure you want to delete "${caseStudy.title}" case study?`)) {
+      try {
+        await deleteCaseStudyMutation.mutateAsync(caseStudy.id);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete case study. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSaveCaseStudy = async (data: any) => {
+    if (editingCaseStudy) {
+      await updateCaseStudyMutation.mutateAsync({ id: editingCaseStudy.id, data });
+    } else {
+      await createCaseStudyMutation.mutateAsync(data);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await auth.logout();
@@ -305,11 +412,10 @@ export default function AdminDashboard() {
             Manage Education
           </Button>
           <Button
-            variant={activeTab === 'case-studies' ? 'outline' : 'outline'}
+            variant={activeTab === 'case-studies' ? 'default' : 'outline'}
             onClick={() => setActiveTab('case-studies')}
-            disabled
           >
-            Manage Case Studies (Coming Soon)
+            Manage Case Studies
           </Button>
         </div>
 
@@ -470,8 +576,92 @@ export default function AdminDashboard() {
 
           {activeTab === 'case-studies' && (
             <div>
-              <h2 className="font-baron text-xl tracking-wide mb-6">MANAGE CASE STUDIES</h2>
-              <p className="text-gray-600">Case study management functionality coming soon...</p>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-baron text-xl tracking-wide">MANAGE CASE STUDIES</h2>
+                <Button onClick={handleCreateCaseStudy}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Case Study
+                </Button>
+              </div>
+
+              {caseStudiesLoading ? (
+                <div>Loading case studies...</div>
+              ) : caseStudies.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-600 mb-4">No case studies yet.</p>
+                  <Button onClick={handleCreateCaseStudy}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Case Study
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {caseStudies.map((caseStudy) => (
+                    <div key={caseStudy.id} className="bg-white p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-baron text-lg tracking-wide">
+                              {caseStudy.title.toUpperCase()}
+                            </h3>
+                            {caseStudy.isPublished && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <Eye className="h-3 w-3 mr-1" />
+                                Published
+                              </span>
+                            )}
+                            {caseStudy.isFeatured && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Featured
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-gray-600 mb-2">{caseStudy.description}</p>
+                          <p className="text-sm text-gray-500">Slug: /{caseStudy.slug}</p>
+                          {caseStudy.tags && caseStudy.tags.length > 0 && (
+                            <div className="flex gap-1 mt-2">
+                              {caseStudy.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          {caseStudy.isPublished && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(`/case-studies/${caseStudy.slug}`, '_blank')}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditCaseStudy(caseStudy)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteCaseStudy(caseStudy)}
+                            disabled={deleteCaseStudyMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -493,6 +683,15 @@ export default function AdminDashboard() {
         onSave={handleSaveEducation}
         education={editingEducation}
         title={editingEducation ? "Edit Education" : "Add Education"}
+      />
+
+      {/* Case Study Modal */}
+      <CaseStudyModal
+        isOpen={isCaseStudyModalOpen}
+        onClose={() => setIsCaseStudyModalOpen(false)}
+        onSave={handleSaveCaseStudy}
+        caseStudy={editingCaseStudy}
+        title={editingCaseStudy ? "Edit Case Study" : "Add Case Study"}
       />
     </div>
   );

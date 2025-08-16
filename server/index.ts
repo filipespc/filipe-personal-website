@@ -267,11 +267,88 @@ app.delete("/api/admin/education/:id", requireAuth, async (req, res) => {
 // Case studies routes
 app.get("/api/case-studies", async (req, res) => {
   try {
-    const caseStudies = await storage.getAllCaseStudies();
+    const caseStudies = await storage.getPublishedCaseStudies();
     res.json(caseStudies);
   } catch (error) {
     console.error("Get case studies error:", error);
     res.status(500).json({ message: "Failed to fetch case studies" });
+  }
+});
+
+app.get("/api/case-studies/:slug", async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const caseStudy = await storage.getCaseStudyBySlug(slug);
+    if (!caseStudy || !caseStudy.isPublished) {
+      return res.status(404).json({ message: "Case study not found" });
+    }
+    res.json(caseStudy);
+  } catch (error) {
+    console.error("Get case study by slug error:", error);
+    res.status(500).json({ message: "Failed to fetch case study" });
+  }
+});
+
+// Admin case studies management endpoints
+app.get("/api/admin/case-studies", requireAuth, async (req, res) => {
+  try {
+    const caseStudies = await storage.getAllCaseStudies();
+    res.json(caseStudies);
+  } catch (error) {
+    console.error("Get admin case studies error:", error);
+    res.status(500).json({ message: "Failed to fetch case studies" });
+  }
+});
+
+app.post("/api/admin/case-studies", requireAuth, async (req, res) => {
+  try {
+    const validatedData = insertCaseStudySchema.parse(req.body);
+    const caseStudy = await storage.createCaseStudy(validatedData);
+    res.status(201).json(caseStudy);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        message: "Validation error", 
+        errors: error.errors 
+      });
+    }
+    console.error("Create case study error:", error);
+    res.status(500).json({ message: "Failed to create case study" });
+  }
+});
+
+app.put("/api/admin/case-studies/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const validatedData = insertCaseStudySchema.partial().parse(req.body);
+    const caseStudy = await storage.updateCaseStudy(id, validatedData);
+    if (!caseStudy) {
+      return res.status(404).json({ message: "Case study not found" });
+    }
+    res.json(caseStudy);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        message: "Validation error", 
+        errors: error.errors 
+      });
+    }
+    console.error("Update case study error:", error);
+    res.status(500).json({ message: "Failed to update case study" });
+  }
+});
+
+app.delete("/api/admin/case-studies/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteCaseStudy(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Case study not found" });
+    }
+    res.json({ message: "Case study deleted successfully" });
+  } catch (error) {
+    console.error("Delete case study error:", error);
+    res.status(500).json({ message: "Failed to delete case study" });
   }
 });
 
