@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, X, Image, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { insertCaseStudySchema, type CaseStudy } from "@shared/schema";
 import EditorJS from "@editorjs/editorjs";
 // @ts-ignore - EditorJS tools don't have perfect types
@@ -56,8 +57,11 @@ export default function CaseStudyModal({
 }: CaseStudyModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [currentTag, setCurrentTag] = useState("");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const editorRef = useRef<EditorJS | null>(null);
   const editorContainer = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const {
     register,
@@ -222,6 +226,66 @@ export default function CaseStudyModal({
     }
   };
 
+  const handleImageUpload = async (file: File) => {
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setValue('featuredImage', result.file.url);
+        toast({
+          title: "Success!",
+          description: "Image uploaded successfully.",
+        });
+      } else {
+        throw new Error(result.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Please select an image smaller than 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please select an image file.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      handleImageUpload(file);
+    }
+  };
+
   const onSubmit = async (data: CaseStudyFormValues) => {
     setIsLoading(true);
     try {
@@ -301,17 +365,47 @@ export default function CaseStudyModal({
 
           {/* Featured Image */}
           <div className="space-y-2">
-            <Label htmlFor="featuredImage">Featured Image URL</Label>
+            <Label htmlFor="featuredImage">Featured Image</Label>
             <div className="flex gap-2">
               <Input
                 id="featuredImage"
                 {...register("featuredImage")}
-                placeholder="https://example.com/image.jpg"
+                placeholder="https://example.com/image.jpg or upload below"
               />
-              <Button type="button" variant="outline" size="sm">
-                <Upload className="h-4 w-4" />
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                disabled={isUploadingImage}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {isUploadingImage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
               </Button>
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+            {watch("featuredImage") && watch("featuredImage")!.trim() && (
+              <div className="mt-2">
+                <img 
+                  src={watch("featuredImage") || ""} 
+                  alt="Featured image preview" 
+                  className="max-w-xs max-h-32 object-cover rounded-md border"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Tags */}

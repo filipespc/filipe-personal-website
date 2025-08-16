@@ -26,6 +26,7 @@ export interface IStorage {
   updateEducation(id: number, education: Partial<InsertEducation>): Promise<Education | undefined>;
   deleteEducation(id: number): Promise<boolean>;
   reorderEducation(educationIds: number[]): Promise<void>;
+  reorderExperiences(experienceIds: number[]): Promise<void>;
   
   // Case Study methods
   getAllCaseStudies(): Promise<CaseStudy[]>;
@@ -92,7 +93,7 @@ export class DatabaseStorage implements IStorage {
 
   // Experience methods
   async getAllExperiences(): Promise<Experience[]> {
-    const experienceList = await db.select().from(experiences).orderBy(desc(experiences.startDate));
+    const experienceList = await db.select().from(experiences).orderBy(experiences.sortOrder, desc(experiences.startDate));
     return experienceList;
   }
 
@@ -121,6 +122,15 @@ export class DatabaseStorage implements IStorage {
   async deleteExperience(id: number): Promise<boolean> {
     const result = await db.delete(experiences).where(eq(experiences.id, id));
     return result.rowCount !== undefined && result.rowCount > 0;
+  }
+
+  async reorderExperiences(experienceIds: number[]): Promise<void> {
+    for (let i = 0; i < experienceIds.length; i++) {
+      await db
+        .update(experiences)
+        .set({ sortOrder: i })
+        .where(eq(experiences.id, experienceIds[i]));
+    }
   }
 
   // Education methods

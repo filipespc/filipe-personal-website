@@ -55,6 +55,7 @@ export const experiences = pgTable("experiences", {
   description: text("description").notNull(),
   accomplishments: text("accomplishments").notNull(),
   tools: text("tools").array().default([]), // JSON array of tool objects {name: string, usage: string}
+  sortOrder: integer("sort_order").default(0), // For manual ordering
 });
 
 export const education = pgTable("education", {

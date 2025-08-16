@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import ExperienceModal from "@/components/experience-modal";
 import EducationModal from "@/components/education-modal";
 import CaseStudyModal from "@/components/case-study-modal";
+import SortableExperienceList from "@/components/sortable-experience-list";
+import SortableEducationList from "@/components/sortable-education-list";
 import { Experience, Profile, Education, CaseStudy } from "@shared/schema";
 import { Plus, Edit, Trash2, ExternalLink, Eye, FileText } from "lucide-react";
 
@@ -124,6 +126,27 @@ async function deleteCaseStudy(id: number): Promise<void> {
     credentials: 'include',
   });
   if (!response.ok) throw new Error("Failed to delete case study");
+}
+
+// Reorder API Functions
+async function reorderExperiences(experienceIds: number[]): Promise<void> {
+  const response = await fetch('/api/admin/experiences/reorder', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ experienceIds }),
+  });
+  if (!response.ok) throw new Error('Failed to reorder experiences');
+}
+
+async function reorderEducation(educationIds: number[]): Promise<void> {
+  const response = await fetch('/api/admin/education/reorder', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ educationIds }),
+  });
+  if (!response.ok) throw new Error('Failed to reorder education');
 }
 
 export default function AdminDashboard() {
@@ -465,41 +488,13 @@ export default function AdminDashboard() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {experiences.map((experience) => (
-                    <div key={experience.id} className="bg-white p-6 rounded-lg border border-gray-200">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-baron text-lg tracking-wide mb-1">
-                            {experience.jobTitle.toUpperCase()}
-                          </h3>
-                          <p className="text-sollo-red font-medium mb-1">{experience.company}</p>
-                          <p className="text-sollo-gold font-medium mb-1">{experience.industry}</p>
-                          <p className="text-sm text-gray-600">
-                            {experience.startDate} - {experience.isCurrentJob ? 'Present' : experience.endDate}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditExperience(experience)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteExperience(experience)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <SortableExperienceList
+                  experiences={experiences}
+                  onReorder={reorderExperiences}
+                  onEdit={handleEditExperience}
+                  onDelete={handleDeleteExperience}
+                  isLoading={experiencesLoading}
+                />
               )}
             </div>
           )}
@@ -525,51 +520,13 @@ export default function AdminDashboard() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {education.map((edu) => (
-                    <div key={edu.id} className="bg-white p-6 rounded-lg border border-gray-200">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-baron text-lg tracking-wide mb-1">
-                            {edu.name.toUpperCase()}
-                          </h3>
-                          <p className="text-sollo-gold font-medium mb-1">{edu.category}</p>
-                          {edu.date && (
-                            <p className="text-sm text-gray-600 mb-2">{edu.date}</p>
-                          )}
-                          {edu.link && (
-                            <a 
-                              href={edu.link} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
-                            >
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              View Certificate
-                            </a>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditEducation(edu)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteEducation(edu)}
-                            disabled={deleteEducationMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <SortableEducationList
+                  education={education}
+                  onReorder={reorderEducation}
+                  onEdit={handleEditEducation}
+                  onDelete={handleDeleteEducation}
+                  isLoading={educationLoading}
+                />
               )}
             </div>
           )}

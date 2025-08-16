@@ -1,6 +1,8 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
 import { getSession, requireAuth, hashPassword, verifyPassword } from "./auth.js";
 import { storage } from "./storage.js";
 import { insertExperienceSchema, insertProfileSchema, insertAdminUserSchema, insertEducationSchema, insertCaseStudySchema } from "@shared/schema";
@@ -9,6 +11,29 @@ import { z } from "zod";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow only image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+});
 
 // Middleware
 app.use(express.json());
@@ -196,6 +221,20 @@ app.delete("/api/admin/experiences/:id", requireAuth, async (req, res) => {
   }
 });
 
+app.patch("/api/admin/experiences/reorder", requireAuth, async (req, res) => {
+  try {
+    const { experienceIds } = req.body;
+    if (!Array.isArray(experienceIds) || experienceIds.some(id => typeof id !== 'number')) {
+      return res.status(400).json({ message: "Invalid experience IDs array" });
+    }
+    await storage.reorderExperiences(experienceIds);
+    res.json({ message: "Experiences reordered successfully" });
+  } catch (error) {
+    console.error("Reorder experiences error:", error);
+    res.status(500).json({ message: "Failed to reorder experiences" });
+  }
+});
+
 // Education routes
 app.get("/api/education", async (req, res) => {
   try {
@@ -261,6 +300,20 @@ app.delete("/api/admin/education/:id", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Delete education error:", error);
     res.status(500).json({ message: "Failed to delete education" });
+  }
+});
+
+app.patch("/api/admin/education/reorder", requireAuth, async (req, res) => {
+  try {
+    const { educationIds } = req.body;
+    if (!Array.isArray(educationIds) || educationIds.some(id => typeof id !== 'number')) {
+      return res.status(400).json({ message: "Invalid education IDs array" });
+    }
+    await storage.reorderEducation(educationIds);
+    res.json({ message: "Education reordered successfully" });
+  } catch (error) {
+    console.error("Reorder education error:", error);
+    res.status(500).json({ message: "Failed to reorder education" });
   }
 });
 
@@ -349,6 +402,109 @@ app.delete("/api/admin/case-studies/:id", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Delete case study error:", error);
     res.status(500).json({ message: "Failed to delete case study" });
+  }
+});
+
+// File Upload endpoints
+app.post("/api/upload-image", requireAuth, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: 0, message: "No file uploaded" });
+    }
+
+    // Upload to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          resource_type: "image",
+          folder: "portfolio-uploads",
+          transformation: [
+            { width: 1200, height: 800, crop: "limit" },
+            { quality: "auto:good" },
+            { format: "auto" }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(req.file!.buffer);
+    });
+
+    const uploadResult = result as any;
+
+    // Return in Editor.js expected format
+    res.json({
+      success: 1,
+      file: {
+        url: uploadResult.secure_url,
+        width: uploadResult.width,
+        height: uploadResult.height
+      }
+    });
+  } catch (error) {
+    console.error("Upload error:", error);
+    res.status(500).json({ 
+      success: 0, 
+      message: "Failed to upload image" 
+    });
+  }
+});
+
+app.get("/api/fetch-url", async (req, res) => {
+  try {
+    const { url } = req.query;
+    
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ 
+        success: 0, 
+        message: "URL parameter is required" 
+      });
+    }
+
+    // Validate URL format
+    try {
+      new URL(url);
+    } catch {
+      return res.status(400).json({ 
+        success: 0, 
+        message: "Invalid URL format" 
+      });
+    }
+
+    // Fetch URL metadata (simplified - you can enhance this with meta scraping)
+    const response = await fetch(url, { 
+      method: 'HEAD',
+      headers: {
+        'User-Agent': 'CareerCanvas-LinkFetcher/1.0'
+      }
+    });
+
+    if (!response.ok) {
+      return res.status(400).json({ 
+        success: 0, 
+        message: "URL is not accessible" 
+      });
+    }
+
+    // Return basic link data for now
+    res.json({
+      success: 1,
+      link: url,
+      meta: {
+        title: url,
+        description: "External link",
+        image: {
+          url: ""
+        }
+      }
+    });
+  } catch (error) {
+    console.error("URL fetch error:", error);
+    res.status(500).json({ 
+      success: 0, 
+      message: "Failed to fetch URL metadata" 
+    });
   }
 });
 
