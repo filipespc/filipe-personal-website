@@ -366,7 +366,7 @@ export default function Portfolio() {
               {category.toUpperCase()}
             </h3>
             <div className="space-y-3">
-              {items.map((edu) => (
+              {items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).map((edu) => (
                 <div key={edu.id} className="border-l-4 border-sollo-red pl-4">
                   <h4 className="font-semibold text-sm">
                     {edu.link ? (
