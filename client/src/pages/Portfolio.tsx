@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Profile, Experience, Education, CaseStudy } from "@shared/schema";
 import { useState, useMemo } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import HeroSection from "@/components/hero-section";
@@ -68,6 +69,7 @@ function formatDateRange(startDate: string, endDate?: string | null, isCurrentJo
 export default function Portfolio() {
   const [mainView, setMainView] = useState<MainView>('experiences');
   const [experienceViewMode, setExperienceViewMode] = useState<ExperienceViewMode>('all');
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const { data: profile } = useQuery({
@@ -146,6 +148,10 @@ export default function Portfolio() {
     }
     
     return industriesArray.sort(([a], [b]) => a.localeCompare(b));
+  };
+
+  const handleCaseStudyClick = (slug: string) => {
+    setLocation(`/case-studies/${slug}`);
   };
 
   const renderAllView = () => (
@@ -296,7 +302,11 @@ export default function Portfolio() {
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {caseStudies.map((caseStudy) => (
-          <div key={caseStudy.id} className="bg-white border border-gray-200 hover:border-sollo-red transition-colors cursor-pointer group overflow-hidden rounded-lg">
+          <div 
+            key={caseStudy.id} 
+            className="bg-white border border-gray-200 hover:border-sollo-red transition-colors cursor-pointer group overflow-hidden rounded-lg"
+            onClick={() => handleCaseStudyClick(caseStudy.slug)}
+          >
             {caseStudy.featuredImage && (
               <div className="w-full h-48 overflow-hidden">
                 <img

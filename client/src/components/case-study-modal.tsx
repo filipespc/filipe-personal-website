@@ -101,102 +101,200 @@ export default function CaseStudyModal({
     }
   }, [watchedTitle, setValue, caseStudy]);
 
-  // Initialize Editor.js
+  // Initialize Editor.js - separate effect that only runs after form is reset
   useEffect(() => {
-    if (isOpen && editorContainer.current && !editorRef.current) {
-      // Add a small delay to ensure form is reset first
-      const timer = setTimeout(async () => {
-        try {
-          const editorData = caseStudy?.content ? (() => {
-            try {
-              return JSON.parse(caseStudy.content);
-            } catch (e) {
-              console.error("Failed to parse case study content:", e);
-              return undefined;
-            }
-          })() : undefined;
+    console.log("🔍 Editor effect check:", { 
+      isOpen, 
+      hasContainer: !!editorContainer.current, 
+      hasEditor: !!editorRef.current,
+      caseStudyTitle: caseStudy?.title || "new case study"
+    });
 
-          editorRef.current = new EditorJS({
-            holder: editorContainer.current!,
-            placeholder: "Start writing your case study content...",
-            tools: {
-              header: {
-                class: Header as any,
-                config: {
-                  levels: [1, 2, 3, 4],
-                  defaultLevel: 2,
-                },
+    // Only initialize editor if modal is open
+    if (!isOpen) {
+      console.log("❌ Modal not open, skipping editor initialization");
+      return;
+    }
+
+    if (editorRef.current) {
+      console.log("❌ Editor already exists, skipping initialization");
+      return;
+    }
+
+    if (!editorContainer.current) {
+      console.log("❌ Editor container not ready, will retry...");
+      // Don't return early, try to wait for container
+    }
+
+    console.log("✅ Starting editor initialization for:", caseStudy?.title || "new case study");
+    
+    // Wait longer to ensure form has been reset and DOM is stable
+    const timer = setTimeout(async () => {
+      console.log("🕒 Timer triggered, checking container...");
+      
+      if (!editorContainer.current) {
+        console.error("💥 Editor container still not available after timeout");
+        return;
+      }
+      
+      console.log("✅ Container found, proceeding with initialization");
+
+      // Clean up any existing editor first
+      if (editorRef.current) {
+        try {
+          editorRef.current.destroy();
+          console.log("Cleaned up existing editor");
+        } catch (e) {
+          console.log("No existing editor to clean up");
+        }
+        editorRef.current = null;
+      }
+
+      try {
+        let editorData = { blocks: [] };
+        
+        // Parse existing content if editing
+        if (caseStudy?.content && caseStudy.content.trim()) {
+          console.log("Processing existing content for:", caseStudy.title);
+          console.log("Content preview:", caseStudy.content.substring(0, 100) + "...");
+          
+          try {
+            const parsed = JSON.parse(caseStudy.content);
+            if (parsed && typeof parsed === 'object' && Array.isArray(parsed.blocks)) {
+              editorData = parsed;
+              console.log("✅ Valid Editor.js content found:", {
+                blocks: parsed.blocks.length,
+                version: parsed.version
+              });
+            } else {
+              console.warn("Content is not valid Editor.js format");
+              editorData = { blocks: [] };
+            }
+          } catch (parseError) {
+            console.error("Failed to parse content as JSON:", parseError);
+            editorData = { blocks: [] };
+          }
+        } else {
+          console.log("No content to load, starting fresh");
+        }
+
+        console.log("Creating Editor.js instance...");
+        
+        editorRef.current = new EditorJS({
+          holder: editorContainer.current,
+          placeholder: "Start writing your case study content...",
+          minHeight: 200,
+          tools: {
+            header: {
+              class: Header as any,
+              config: {
+                levels: [1, 2, 3, 4],
+                defaultLevel: 2,
               },
-              paragraph: {
-                class: Paragraph as any,
-                inlineToolbar: true,
-              },
-              list: {
-                class: List as any,
-                inlineToolbar: true,
-              },
-              quote: {
-                class: Quote as any,
-                inlineToolbar: true,
-              },
-              code: {
-                class: Code as any,
-              },
-              delimiter: {
-                class: Delimiter as any,
-              },
-              inlineCode: {
-                class: InlineCode as any,
-              },
-              marker: {
-                class: Marker as any,
-              },
-              image: {
-                class: EditorImage as any,
-                config: {
-                  endpoints: {
-                    byFile: "/api/upload-image",
-                  },
-                },
-              },
-              linkTool: {
-                class: LinkTool as any,
-                config: {
-                  endpoint: "/api/fetch-url",
+            },
+            paragraph: {
+              class: Paragraph as any,
+              inlineToolbar: true,
+            },
+            list: {
+              class: List as any,
+              inlineToolbar: true,
+            },
+            quote: {
+              class: Quote as any,
+              inlineToolbar: true,
+            },
+            code: {
+              class: Code as any,
+            },
+            delimiter: {
+              class: Delimiter as any,
+            },
+            inlineCode: {
+              class: InlineCode as any,
+            },
+            marker: {
+              class: Marker as any,
+            },
+            image: {
+              class: EditorImage as any,
+              config: {
+                endpoints: {
+                  byFile: "/api/upload-image",
                 },
               },
             },
-            data: editorData,
-          });
+            linkTool: {
+              class: LinkTool as any,
+              config: {
+                endpoint: "/api/fetch-url",
+              },
+            },
+          },
+          data: editorData,
+        });
 
-          await editorRef.current.isReady;
-          console.log("Editor initialized with data:", editorData);
-        } catch (error) {
-          console.error("Failed to initialize editor:", error);
+        await editorRef.current.isReady;
+        console.log("🎉 Editor fully initialized and ready!");
+        
+        if (editorData.blocks && editorData.blocks.length > 0) {
+          console.log(`📝 Loaded ${editorData.blocks.length} content blocks`);
+        } else {
+          console.log("📝 Editor ready for new content");
         }
-      }, 100);
 
-      return () => {
-        clearTimeout(timer);
-      };
-    }
+      } catch (error) {
+        console.error("💥 Editor initialization failed:", error);
+        
+        // Last resort fallback
+        try {
+          console.log("🚨 Attempting minimal fallback editor...");
+          editorRef.current = new EditorJS({
+            holder: editorContainer.current!,
+            placeholder: "Editor fallback mode - start typing...",
+            tools: {
+              paragraph: { class: Paragraph as any },
+            },
+          });
+          await editorRef.current.isReady;
+          console.log("✅ Fallback editor ready");
+        } catch (fallbackError) {
+          console.error("💥 Even fallback failed:", fallbackError);
+        }
+      }
+    }, 500); // Longer delay to ensure everything is settled
 
+    return () => clearTimeout(timer);
+    
+  }, [isOpen, caseStudy?.id]); // Depend on case study ID to reinitialize when switching between case studies
+
+  // Cleanup effect
+  useEffect(() => {
     return () => {
       if (editorRef.current) {
         try {
           editorRef.current.destroy();
+          console.log("Editor cleaned up on unmount");
         } catch (e) {
-          console.log("Editor already destroyed");
+          console.log("Editor already destroyed on unmount");
         }
         editorRef.current = null;
       }
     };
-  }, [isOpen, caseStudy]);
+  }, []);
 
   // Reset form when modal opens/closes
   useEffect(() => {
+    console.log("Form reset effect triggered:", { isOpen, caseStudy: !!caseStudy });
+    
     if (isOpen) {
       if (caseStudy) {
+        console.log("Resetting form with case study data:", {
+          title: caseStudy.title,
+          slug: caseStudy.slug,
+          hasContent: !!caseStudy.content,
+          contentLength: caseStudy.content?.length || 0
+        });
         reset({
           title: caseStudy.title,
           slug: caseStudy.slug,
@@ -208,6 +306,7 @@ export default function CaseStudyModal({
           isFeatured: caseStudy.isFeatured,
         });
       } else {
+        console.log("Resetting form with empty data");
         reset({
           title: "",
           slug: "",
@@ -218,6 +317,18 @@ export default function CaseStudyModal({
           isPublished: false,
           isFeatured: false,
         });
+      }
+    } else {
+      console.log("Modal closed, cleaning up editor");
+      // Clean up editor when modal closes
+      if (editorRef.current) {
+        try {
+          editorRef.current.destroy();
+          console.log("Editor destroyed on form reset");
+        } catch (e) {
+          console.log("Editor already destroyed during form reset");
+        }
+        editorRef.current = null;
       }
     }
   }, [isOpen, caseStudy, reset]);

@@ -236,6 +236,28 @@ GET /api/fetch-url           // URL metadata fetching
 3. **Content Organization**: Custom ordering and categorization
 4. **Publishing Control**: Draft/publish workflow
 
+## 🛠️ Development Setup
+
+### Local Development Server
+**IMPORTANT**: Always use port 5173 for the local development server to ensure consistent development experience.
+
+The Vite configuration is set to specifically use port 5173:
+```typescript
+// vite.config.ts
+server: {
+  port: 5173,  // Fixed port to avoid conflicts
+  // ... other config
+}
+```
+
+When starting the development server:
+1. Kill any existing processes on port 5173: `pkill -f "npm run dev"`
+2. Start the server: `npm run dev`
+3. The client will always run on http://localhost:5173
+4. The backend runs on http://localhost:5000
+
+This ensures consistent URLs across development sessions and prevents port conflicts that could cause timeout issues.
+
 ## 🔧 Development Dependencies
 
 ### Core Frontend

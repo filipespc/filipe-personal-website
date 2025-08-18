@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import ExperienceModal from "@/components/experience-modal";
 import EducationModal from "@/components/education-modal";
 import CaseStudyModal from "@/components/case-study-modal";
+import ProfileModal from "@/components/profile-modal";
 import SortableExperienceList from "@/components/sortable-experience-list";
 import SortableEducationList from "@/components/sortable-education-list";
 import { Experience, Profile, Education, CaseStudy } from "@shared/schema";
@@ -21,6 +22,32 @@ async function fetchExperiences(): Promise<Experience[]> {
 async function fetchProfile(): Promise<Profile> {
   const response = await fetch("/api/profile");
   if (!response.ok) throw new Error("Failed to fetch profile");
+  return response.json();
+}
+
+async function updateProfile(data: any): Promise<Profile> {
+  const response = await fetch("/api/admin/profile", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    
+    let errorMessage = "Failed to update profile";
+    try {
+      const errorData = JSON.parse(errorText);
+      errorMessage = errorData.message || errorMessage;
+    } catch (e) {
+      // If we can't parse JSON, use the raw text
+      if (errorText) errorMessage = errorText;
+    }
+    
+    throw new Error(errorMessage);
+  }
+  
   return response.json();
 }
 
@@ -155,6 +182,7 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   
   const [activeTab, setActiveTab] = useState<'profile' | 'experiences' | 'education' | 'case-studies'>('experiences');
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isExperienceModalOpen, setIsExperienceModalOpen] = useState(false);
   const [editingExperience, setEditingExperience] = useState<Experience | undefined>();
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
@@ -273,6 +301,22 @@ export default function AdminDashboard() {
     },
   });
 
+  // Profile Mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: updateProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast({ title: "Success!", description: "Profile updated successfully." });
+    },
+    onError: (error) => {
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateExperience = () => {
     setEditingExperience(undefined);
     setIsExperienceModalOpen(true);
@@ -371,6 +415,15 @@ export default function AdminDashboard() {
     }
   };
 
+  // Profile handlers
+  const handleEditProfile = () => {
+    setIsProfileModalOpen(true);
+  };
+
+  const handleSaveProfile = async (data: any) => {
+    await updateProfileMutation.mutateAsync(data);
+  };
+
   const handleLogout = async () => {
     try {
       await auth.logout();
@@ -458,7 +511,7 @@ export default function AdminDashboard() {
                     <p className="text-gray-700">{profile.briefIntro}</p>
                   </div>
                   <div className="pt-4">
-                    <Button disabled>Edit Profile (Coming Soon)</Button>
+                    <Button onClick={handleEditProfile}>Edit Profile</Button>
                   </div>
                 </div>
               ) : (
@@ -554,7 +607,11 @@ export default function AdminDashboard() {
               ) : (
                 <div className="space-y-4">
                   {caseStudies.map((caseStudy) => (
-                    <div key={caseStudy.id} className="bg-white p-6 rounded-lg border border-gray-200">
+                    <div 
+                      key={caseStudy.id} 
+                      className="bg-white p-6 rounded-lg border border-gray-200 hover:border-sollo-red transition-colors cursor-pointer"
+                      onClick={() => handleEditCaseStudy(caseStudy)}
+                    >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
@@ -593,7 +650,10 @@ export default function AdminDashboard() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => window.open(`/case-studies/${caseStudy.slug}`, '_blank')}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(`/case-studies/${caseStudy.slug}`, '_blank');
+                              }}
                             >
                               <ExternalLink className="h-4 w-4" />
                             </Button>
@@ -601,14 +661,20 @@ export default function AdminDashboard() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleEditCaseStudy(caseStudy)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditCaseStudy(caseStudy);
+                            }}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDeleteCaseStudy(caseStudy)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteCaseStudy(caseStudy);
+                            }}
                             disabled={deleteCaseStudyMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -649,6 +715,15 @@ export default function AdminDashboard() {
         onSave={handleSaveCaseStudy}
         caseStudy={editingCaseStudy}
         title={editingCaseStudy ? "Edit Case Study" : "Add Case Study"}
+      />
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        onSave={handleSaveProfile}
+        profile={profile}
+        title="Edit Profile"
       />
     </div>
   );

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Portfolio from "./pages/Portfolio";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import CaseStudyDetail from "./pages/CaseStudyDetail";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./hooks/useAuth";
 
@@ -22,6 +23,7 @@ function App() {
       <AuthProvider>
         <Router>
           <Route path="/" component={Portfolio} />
+          <Route path="/case-studies/:slug" component={CaseStudyDetail} />
           <Route path="/admin/login" component={AdminLogin} />
           <Route path="/admin" component={AdminDashboard} />
         </Router>
