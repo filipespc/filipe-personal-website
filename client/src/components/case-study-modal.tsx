@@ -104,8 +104,18 @@ export default function CaseStudyModal({
   // Initialize Editor.js
   useEffect(() => {
     if (isOpen && editorContainer.current && !editorRef.current) {
-      const initializeEditor = async () => {
+      // Add a small delay to ensure form is reset first
+      const timer = setTimeout(async () => {
         try {
+          const editorData = caseStudy?.content ? (() => {
+            try {
+              return JSON.parse(caseStudy.content);
+            } catch (e) {
+              console.error("Failed to parse case study content:", e);
+              return undefined;
+            }
+          })() : undefined;
+
           editorRef.current = new EditorJS({
             holder: editorContainer.current!,
             placeholder: "Start writing your case study content...",
@@ -156,25 +166,32 @@ export default function CaseStudyModal({
                 },
               },
             },
-            data: caseStudy?.content ? JSON.parse(caseStudy.content) : undefined,
+            data: editorData,
           });
 
           await editorRef.current.isReady;
+          console.log("Editor initialized with data:", editorData);
         } catch (error) {
           console.error("Failed to initialize editor:", error);
         }
-      };
+      }, 100);
 
-      initializeEditor();
+      return () => {
+        clearTimeout(timer);
+      };
     }
 
     return () => {
       if (editorRef.current) {
-        editorRef.current.destroy();
+        try {
+          editorRef.current.destroy();
+        } catch (e) {
+          console.log("Editor already destroyed");
+        }
         editorRef.current = null;
       }
     };
-  }, [isOpen, caseStudy?.content]);
+  }, [isOpen, caseStudy]);
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -291,14 +308,29 @@ export default function CaseStudyModal({
     try {
       // Get content from Editor.js
       if (editorRef.current) {
-        const editorData = await editorRef.current.save();
-        data.content = JSON.stringify(editorData);
+        try {
+          const editorData = await editorRef.current.save();
+          data.content = JSON.stringify(editorData);
+          console.log("Saving editor data:", editorData);
+        } catch (editorError) {
+          console.error("Failed to save editor content:", editorError);
+          // Continue with empty content if editor fails
+          data.content = JSON.stringify({ blocks: [] });
+        }
+      } else {
+        // No editor instance, save empty content
+        data.content = JSON.stringify({ blocks: [] });
       }
 
       await onSave(data);
       onClose();
     } catch (error) {
       console.error("Failed to save case study:", error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save case study. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -306,7 +338,11 @@ export default function CaseStudyModal({
 
   const handleClose = () => {
     if (editorRef.current) {
-      editorRef.current.destroy();
+      try {
+        editorRef.current.destroy();
+      } catch (e) {
+        console.log("Editor already destroyed");
+      }
       editorRef.current = null;
     }
     onClose();
