@@ -6,6 +6,17 @@ interface FormattedTextProps {
   className?: string;
 }
 
+// Security: Validate URLs to prevent XSS attacks
+const isValidUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    // Only allow http and https protocols to prevent javascript: and other malicious protocols
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+};
+
 const FormattedText: React.FC<FormattedTextProps> = ({ text, className }) => {
   if (!text) return null;
 
@@ -27,17 +38,27 @@ const FormattedText: React.FC<FormattedTextProps> = ({ text, className }) => {
           <span key={index}>
             {parts.map((part, partIndex) => {
               if (urlRegex.test(part)) {
-                return (
-                  <a
-                    key={partIndex}
-                    href={part}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sollo-red hover:text-sollo-red/80 underline transition-colors"
-                  >
-                    {part}
-                  </a>
-                );
+                // Security: Only render links for validated URLs
+                if (isValidUrl(part)) {
+                  return (
+                    <a
+                      key={partIndex}
+                      href={part}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sollo-red hover:text-sollo-red/80 underline transition-colors"
+                    >
+                      {part}
+                    </a>
+                  );
+                } else {
+                  // Render as plain text if URL is invalid/potentially malicious
+                  return (
+                    <span key={partIndex} className="text-gray-500">
+                      {part}
+                    </span>
+                  );
+                }
               }
               return part;
             })}

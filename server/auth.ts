@@ -13,16 +13,21 @@ export function getSession() {
     tableName: 'sessions',
   });
   
+  // Validate required environment variables
+  if (!process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET environment variable is required for security');
+  }
+  
   return session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key-here',
+    secret: process.env.SESSION_SECRET,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // Temporarily disable for Railway troubleshooting
+      secure: process.env.NODE_ENV === 'production',
       maxAge: sessionTtl,
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     },
   });
 }
