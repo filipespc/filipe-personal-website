@@ -93,7 +93,8 @@ function processQuoteBlocks(container: HTMLElement | null) {
     (quote as HTMLElement).style.position = 'relative';
     
     // Remove any nested element styling that might create boxes and fix sizing
-    const allElements = quote.querySelectorAll('*');
+    // But preserve list elements' natural spacing and indentation
+    const allElements = quote.querySelectorAll('*:not(.cdx-list):not(.cdx-list__item)');
     allElements.forEach(el => {
       (el as HTMLElement).style.boxShadow = 'none !important';
       (el as HTMLElement).style.border = 'none !important';

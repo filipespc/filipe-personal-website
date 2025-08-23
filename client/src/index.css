@@ -198,7 +198,7 @@
 
   /* Editor.js Quote block styles - completely remove any boxes and ensure natural sizing */
   .cdx-quote,
-  .cdx-quote *,
+  .cdx-quote *:not(.cdx-list):not(.cdx-list__item),
   .cdx-quote .ce-block,
   .cdx-quote .ce-block__content {
     margin: 0 !important;
@@ -350,14 +350,61 @@
     background-color: #f5f5f5;
   }
 
-  /* Editor.js List styles */
+  /* Editor.js List styles - force perfect alignment with paragraph text */
   .cdx-list {
-    margin: 1rem 0;
+    margin: 1rem 0 !important;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
   }
 
+  .cdx-list--unordered .cdx-list__item,
+  .cdx-list--ordered .cdx-list__item,
   .cdx-list__item {
-    margin: 0.5rem 0;
+    margin: 0.5rem 0 !important;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
     line-height: 1.6;
+    position: relative;
+    list-style: none;
+  }
+
+  /* Custom bullet points for unordered lists - positioned at paragraph start */
+  .cdx-list--unordered .cdx-list__item::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #374151;
+    font-weight: bold;
+    font-size: 1.25rem;
+    width: 1.2rem;
+    display: inline-block;
+  }
+
+  .cdx-list--unordered .cdx-list__item {
+    text-indent: 1.2rem;
+  }
+
+  /* Custom numbering for ordered lists - positioned at paragraph start */
+  .cdx-list--ordered {
+    counter-reset: list-counter;
+  }
+
+  .cdx-list--ordered .cdx-list__item {
+    counter-increment: list-counter;
+    text-indent: 1.5rem;
+  }
+
+  .cdx-list--ordered .cdx-list__item::before {
+    content: counter(list-counter) ".";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #374151;
+    font-weight: bold;
+    width: 1.5rem;
+    text-align: left;
+    display: inline-block;
   }
 
   /* Editor.js Code block styles */
