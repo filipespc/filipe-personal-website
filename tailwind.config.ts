@@ -61,6 +61,8 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        // Custom brand colors
+        "sollo-red": "#dc2626",
       },
       keyframes: {
         "accordion-down": {

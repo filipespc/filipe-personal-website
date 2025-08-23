@@ -34,6 +34,25 @@ async function fetchCaseStudy(slug: string): Promise<CaseStudy> {
   return response.json();
 }
 
+// Function to process markdown-style links [text](url) in rendered content
+function processMarkdownLinks(container: HTMLElement | null) {
+  if (!container) return;
+  
+  const paragraphs = container.querySelectorAll('.ce-paragraph');
+  paragraphs.forEach(paragraph => {
+    if (paragraph.innerHTML) {
+      // Regex to match [text](url) markdown links
+      const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+      const originalHTML = paragraph.innerHTML;
+      const newHTML = originalHTML.replace(markdownLinkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+      
+      if (newHTML !== originalHTML) {
+        paragraph.innerHTML = newHTML;
+      }
+    }
+  });
+}
+
 export default function CaseStudyDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [, setLocation] = useLocation();
@@ -89,6 +108,9 @@ export default function CaseStudyDetail() {
             },
             linkTool: {
               class: LinkTool as any,
+              config: {
+                endpoint: "/api/fetch-url",
+              },
             },
           },
           data: editorData,
@@ -96,6 +118,10 @@ export default function CaseStudyDetail() {
 
         editorRef.current.isReady.then(() => {
           console.log("Read-only editor initialized");
+          // Process markdown-style links after editor is ready
+          setTimeout(() => {
+            processMarkdownLinks(editorContainer.current);
+          }, 100);
         });
       } catch (error) {
         console.error("Failed to parse case study content:", error);
