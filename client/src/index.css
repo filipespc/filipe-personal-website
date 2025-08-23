@@ -352,7 +352,7 @@
 
   /* Editor.js List styles - force perfect alignment with paragraph text */
   .cdx-list {
-    margin: 1rem 0 !important;
+    margin: 0.1rem 0 !important;
     padding-left: 0 !important;
     margin-left: 0 !important;
   }
@@ -434,7 +434,7 @@
 
   /* General Editor.js block spacing */
   .codex-editor .ce-block {
-    margin: 1rem 0;
+    margin: 0.1rem 0;
   }
 
   .codex-editor .ce-block__content {
@@ -444,7 +444,56 @@
   /* Ensure proper text formatting in editor blocks */
   .codex-editor .ce-paragraph {
     line-height: 1.6;
-    margin: 1rem 0;
+    margin: 0.1rem 0;
+  }
+
+  /* Override Tailwind Typography prose spacing - make everything tight in case studies */
+  .prose .ce-paragraph,
+  .prose .codex-editor .ce-paragraph,
+  .prose-lg .ce-paragraph,
+  .prose-lg .codex-editor .ce-paragraph {
+    margin-top: 0.1rem !important;
+    margin-bottom: 0.1rem !important;
+  }
+
+  .prose .ce-block,
+  .prose .codex-editor .ce-block,
+  .prose-lg .ce-block,
+  .prose-lg .codex-editor .ce-block {
+    margin-top: 0.1rem !important;
+    margin-bottom: 0.1rem !important;
+  }
+
+  /* Override list spacing in prose */
+  .prose .cdx-list,
+  .prose-lg .cdx-list {
+    margin-top: 0.1rem !important;
+    margin-bottom: 0.1rem !important;
+  }
+
+  .prose .cdx-list__item,
+  .prose-lg .cdx-list__item {
+    margin-top: 0.1rem !important;
+    margin-bottom: 0.1rem !important;
+  }
+
+  /* Override all other prose element spacing */
+  .prose > *,
+  .prose-lg > * {
+    margin-top: 0.1rem !important;
+    margin-bottom: 0.1rem !important;
+  }
+
+  .prose ul,
+  .prose ol,
+  .prose li,
+  .prose p,
+  .prose-lg ul,
+  .prose-lg ol,
+  .prose-lg li,
+  .prose-lg p {
+    margin-top: 0.1rem !important;
+    margin-bottom: 0.1rem !important;
   }
 
   /* Handle inline markdown-style links in Editor.js content */
