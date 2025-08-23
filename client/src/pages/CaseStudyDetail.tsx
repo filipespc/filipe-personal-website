@@ -53,6 +53,97 @@ function processMarkdownLinks(container: HTMLElement | null) {
   });
 }
 
+// Function to clean up quote blocks and remove editor interface elements
+function processQuoteBlocks(container: HTMLElement | null) {
+  if (!container) return;
+  
+  const quotes = container.querySelectorAll('.cdx-quote');
+  quotes.forEach(quote => {
+    // Remove editor interface elements
+    const captions = quote.querySelectorAll('.cdx-quote__caption');
+    captions.forEach(caption => {
+      // If caption is empty or just contains placeholder text, hide it
+      if (!caption.textContent?.trim() || caption.textContent?.trim() === 'Enter a caption') {
+        caption.style.display = 'none';
+      }
+    });
+    
+    // Remove contenteditable attributes and data-placeholder
+    const editables = quote.querySelectorAll('[contenteditable]');
+    editables.forEach(editable => {
+      editable.removeAttribute('contenteditable');
+      editable.removeAttribute('data-placeholder');
+    });
+    
+    // Apply clean, professional quote styling with minimal container border
+    quote.style.border = 'none !important';
+    quote.style.borderTop = 'none !important';
+    quote.style.borderRight = 'none !important';
+    quote.style.borderBottom = 'none !important';
+    quote.style.borderLeft = '4px solid #dc2626 !important';
+    quote.style.outline = 'none !important';
+    quote.style.boxShadow = 'none !important';
+    quote.style.backgroundColor = 'transparent !important';
+    quote.style.background = 'none !important';
+    quote.style.backgroundImage = 'none !important';
+    quote.style.padding = '0.1rem 0 0.1rem 2rem';
+    quote.style.margin = '2rem 0';
+    quote.style.fontStyle = 'italic';
+    quote.style.borderRadius = '0 !important';
+    (quote as HTMLElement).style.position = 'relative';
+    
+    // Remove any nested element styling that might create boxes and fix sizing
+    const allElements = quote.querySelectorAll('*');
+    allElements.forEach(el => {
+      (el as HTMLElement).style.boxShadow = 'none !important';
+      (el as HTMLElement).style.border = 'none !important';
+      (el as HTMLElement).style.outline = 'none !important';
+      (el as HTMLElement).style.backgroundColor = 'transparent !important';
+      (el as HTMLElement).style.background = 'none !important';
+      // Remove any fixed height that prevents natural content sizing
+      (el as HTMLElement).style.height = 'auto !important';
+      (el as HTMLElement).style.minHeight = 'auto !important';
+    });
+    
+    // Ensure the quote container itself sizes to content
+    quote.style.height = 'auto !important';
+    quote.style.minHeight = 'auto !important';
+    quote.style.maxHeight = 'none !important';
+    
+    // Style the quote text for better readability
+    const quoteText = quote.querySelector('.cdx-quote__text') as HTMLElement;
+    if (quoteText) {
+      quoteText.style.fontSize = '1.125rem';
+      quoteText.style.fontWeight = '400';
+      quoteText.style.color = '#4b5563';
+      quoteText.style.margin = '0';
+      quoteText.style.lineHeight = '1.7';
+      quoteText.style.fontFamily = 'Georgia, serif';
+    }
+    
+    // Add elegant quotation mark decoration
+    const beforeElement = (quote.querySelector('.quote-decoration') || document.createElement('div')) as HTMLElement;
+    if (!quote.querySelector('.quote-decoration')) {
+      beforeElement.className = 'quote-decoration';
+      beforeElement.innerHTML = '"';
+      beforeElement.style.cssText = `
+        position: absolute;
+        top: -0.25rem;
+        left: -0.25rem;
+        font-size: 3rem;
+        color: #dc2626;
+        opacity: 0.3;
+        font-family: Georgia, serif;
+        font-weight: bold;
+        line-height: 1;
+        pointer-events: none;
+        z-index: 1;
+      `;
+      quote.prepend(beforeElement);
+    }
+  });
+}
+
 export default function CaseStudyDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [, setLocation] = useLocation();
@@ -118,9 +209,10 @@ export default function CaseStudyDetail() {
 
         editorRef.current.isReady.then(() => {
           console.log("Read-only editor initialized");
-          // Process markdown-style links after editor is ready
+          // Process content after editor is ready
           setTimeout(() => {
             processMarkdownLinks(editorContainer.current);
+            processQuoteBlocks(editorContainer.current);
           }, 100);
         });
       } catch (error) {
