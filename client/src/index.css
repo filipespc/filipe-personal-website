@@ -447,13 +447,35 @@
     margin: 0.1rem 0;
   }
 
-  /* Override Tailwind Typography prose spacing - make everything tight in case studies */
+  /* Override Tailwind Typography prose to match original CareerCanvas design */
+  .prose,
+  .prose-lg {
+    font-family: 'Apercu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 1rem !important;
+    line-height: 1.7 !important;
+    color: #333 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  /* Force full width on all prose content elements */
+  .prose *,
+  .prose-lg * {
+    max-width: none !important;
+    width: auto !important;
+  }
+
+  /* Case study paragraph and block spacing */
   .prose .ce-paragraph,
   .prose .codex-editor .ce-paragraph,
   .prose-lg .ce-paragraph,
   .prose-lg .codex-editor .ce-paragraph {
     margin-top: 0.1rem !important;
     margin-bottom: 0.1rem !important;
+    font-family: 'Apercu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 1rem !important;
+    line-height: 1.7 !important;
+    color: #333 !important;
   }
 
   .prose .ce-block,
@@ -464,24 +486,33 @@
     margin-bottom: 0.1rem !important;
   }
 
-  /* Override list spacing in prose */
+  /* Override list spacing and styling in prose */
   .prose .cdx-list,
   .prose-lg .cdx-list {
     margin-top: 0.1rem !important;
     margin-bottom: 0.1rem !important;
+    font-family: 'Apercu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 1rem !important;
+    line-height: 1.7 !important;
+    color: #333 !important;
   }
 
   .prose .cdx-list__item,
   .prose-lg .cdx-list__item {
     margin-top: 0.1rem !important;
     margin-bottom: 0.1rem !important;
+    font-family: 'Apercu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 1rem !important;
+    line-height: 1.7 !important;
+    color: #333 !important;
   }
 
-  /* Override all other prose element spacing */
+  /* Override all other prose element typography */
   .prose > *,
   .prose-lg > * {
     margin-top: 0.1rem !important;
     margin-bottom: 0.1rem !important;
+    font-family: 'Apercu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
   }
 
   .prose ul,
@@ -494,6 +525,18 @@
   .prose-lg p {
     margin-top: 0.1rem !important;
     margin-bottom: 0.1rem !important;
+    font-family: 'Apercu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 1rem !important;
+    line-height: 1.7 !important;
+    color: #333 !important;
+  }
+
+  /* Ensure headers in case studies use Baron Neue */
+  .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6,
+  .prose-lg h1, .prose-lg h2, .prose-lg h3, .prose-lg h4, .prose-lg h5, .prose-lg h6 {
+    font-family: 'Baron Neue', 'Arial Black', sans-serif !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.1em !important;
   }
 
   /* Handle inline markdown-style links in Editor.js content */
