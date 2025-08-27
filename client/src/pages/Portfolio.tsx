@@ -416,10 +416,8 @@ export default function Portfolio() {
     <div className="min-h-screen bg-white font-apercu">
       {/* Hero Section */}
       <HeroSection />
-
-
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-16">
+      <div className="max-w-6xl mx-auto px-6 pt-0 pb-16">
         {/* Main View Selector - Tab Style */}
         <div className="mb-8">
           <div className="flex border-b border-gray-200">
