@@ -27,12 +27,23 @@ export function getSession() {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: sessionTtl,
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      sameSite: 'lax', // Use 'lax' in both environments for better compatibility
     },
   });
 }
 
 export const requireAuth: RequestHandler = (req, res, next) => {
+  // Debug logging for production troubleshooting
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Auth check:', {
+      hasSession: !!req.session,
+      sessionId: req.session?.id,
+      userId: req.session?.userId,
+      cookies: Object.keys(req.cookies || {}),
+      path: req.path
+    });
+  }
+  
   if (req.session && req.session.userId) {
     return next();
   }
