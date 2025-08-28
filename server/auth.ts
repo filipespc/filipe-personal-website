@@ -34,19 +34,27 @@ export function getSession() {
 
 export const requireAuth: RequestHandler = (req, res, next) => {
   // Debug logging for production troubleshooting
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Auth check:', {
-      hasSession: !!req.session,
-      sessionId: req.session?.id,
-      userId: req.session?.userId,
-      cookies: Object.keys(req.cookies || {}),
-      path: req.path
-    });
-  }
+  console.log('Auth check:', {
+    hasSession: !!req.session,
+    sessionId: req.session?.id,
+    userId: req.session?.userId,
+    username: req.session?.username,
+    cookies: Object.keys(req.cookies || {}),
+    headers: {
+      cookie: req.headers.cookie ? 'present' : 'missing',
+      userAgent: req.headers['user-agent']?.substring(0, 50)
+    },
+    path: req.path,
+    method: req.method,
+    env: process.env.NODE_ENV
+  });
   
   if (req.session && req.session.userId) {
+    console.log('✅ Authentication successful for user:', req.session.username);
     return next();
   }
+  
+  console.log('❌ Authentication failed - missing session or userId');
   res.status(401).json({ message: 'Authentication required' });
 };
 
