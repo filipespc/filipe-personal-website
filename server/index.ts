@@ -75,6 +75,21 @@ app.post("/api/admin/login", async (req, res) => {
     req.session.userId = adminUser.id.toString();
     req.session.username = adminUser.username;
     
+    // Debug: Log session creation
+    console.log('✅ Session created:', {
+      sessionId: req.session.id,
+      userId: req.session.userId,
+      username: req.session.username,
+      cookieSecure: req.session.cookie.secure,
+      cookieSameSite: req.session.cookie.sameSite,
+      cookieDomain: req.session.cookie.domain,
+      headers: {
+        host: req.headers.host,
+        origin: req.headers.origin,
+        userAgent: req.headers['user-agent']?.substring(0, 50)
+      }
+    });
+    
     res.json({ 
       id: adminUser.id, 
       username: adminUser.username 
@@ -91,6 +106,7 @@ app.post("/api/admin/logout", (req, res) => {
       console.error("Logout error:", err);
       return res.status(500).json({ message: "Logout failed" });
     }
+    // Clear session cookie (let Railway handle domain routing)
     res.clearCookie('connect.sid');
     res.json({ message: "Logged out successfully" });
   });

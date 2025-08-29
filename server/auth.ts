@@ -25,9 +25,9 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Railway terminates HTTPS at load balancer, internal routing is HTTP
       maxAge: sessionTtl,
-      sameSite: 'lax', // Use 'lax' in both environments for better compatibility
+      sameSite: 'lax',
     },
   });
 }
@@ -39,8 +39,12 @@ export const requireAuth: RequestHandler = (req, res, next) => {
     sessionId: req.session?.id,
     userId: req.session?.userId,
     username: req.session?.username,
+    sessionCookieValues: req.session?.cookie,
     cookies: Object.keys(req.cookies || {}),
+    rawCookie: req.headers.cookie,
     headers: {
+      host: req.headers.host,
+      origin: req.headers.origin,
       cookie: req.headers.cookie ? 'present' : 'missing',
       userAgent: req.headers['user-agent']?.substring(0, 50)
     },
